@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G1 Robot SDK Documentation</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+        }
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+        }
+        .tab button:hover {
+            background-color: #ddd;
+        }
+        .tab button.active {
+            background-color: #ccc;
+        }
+        .tabcontent {
+            display: none;
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            border-top: none;
+            background-color: white;
+        }
+        h1, h2, h3, h4 {
+            color: #333;
+        }
+        code {
+            background-color: #eee;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        pre {
+            background-color: #eee;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>G1 Robot SDK Documentation</h1>
+    <p>This document provides a detailed guide to using the Python SDK for the Unitree G1 robot.</p>
+
+    <div class="tab">
+        <button class="tablinks" onclick="openTab(event, 'Overview')" id="defaultOpen">Overview</button>
+        <button class="tablinks" onclick="openTab(event, 'RunInstructions')">Run Instructions</button>
+        <button class="tablinks" onclick="openTab(event, 'Arm')">Arm SDK</button>
+        <button class="tablinks" onclick="openTab(event, 'Audio')">Audio SDK</button>
+        <button class="tablinks" onclick="openTab(event, 'Locomotion')">Locomotion SDK</button>
+        <button class="tablinks" onclick="openTab(event, 'Examples')">Examples</button>
+    </div>
+
+    <div id="Overview" class="tabcontent">
+        <h2>Overview</h2>
+        <img src="overview.jpg" alt="G1 Robot Overview Image" style="max-width:100%; height:auto;">
+        <ul>
+            <li><strong>SDK Version</strong>: <code>1.0.1</code></li>
+            <li><strong>GitHub Repository</strong>: <a href="https://github.com/unitreerobotics/unitree_sdk2_python" target="_blank">https://github.com/unitreerobotics/unitree_sdk2_python</a></li>
+        </ul>
+
+        <h3>Installation</h3>
+        <p>You can install the Unitree SDK for Python by cloning the repository and installing it locally. It's recommended to do this within a virtual environment.</p>
+        <pre><code># Create a virtual environment (optional but recommended)
+python3 -m venv venv
+source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+
+# Install the SDK from the cloned repository
+pip install .
+</code></pre>
+
+        <h3>1.1. Services</h3>
+        <p>The G1 SDK is built upon a service-oriented architecture. Each major functional component of the robot is exposed as a service that you can interact with. The primary services are:</p>
+        <ul>
+            <li><strong>Arm Service (`arm`)</strong>: For controlling the robot's arms.</li>
+            <li><strong>Audio Service (`voice`)</strong>: For text-to-speech, audio playback, and controlling the LED lights.</li>
+            <li><strong>Locomotion Service (`sport`)</strong>: For controlling the robot's movement and posture.</li>
+        </ul>
+
+        <h3>1.2. Clients</h3>
+        <p>To interact with a service, you must create a client object. Each service has a corresponding client class (e.g., <code>G1ArmActionClient</code> for the Arm service). You must initialize the client before calling its methods.</p>
+
+        <h3>1.3. Initialization</h3>
+        <p>Before using any of the SDK's clients, you must initialize the channel factory with your network interface. This is a crucial first step for communication with the robot.</p>
+        <pre><code>import sys
+from unitree_sdk2py.core.channel import ChannelFactoryInitialize
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print(f"Usage: python3 {sys.argv[0]} networkInterface")
+        sys.exit(-1)
+
+    # Initialize the channel factory
+    ChannelFactoryInitialize(0, sys.argv[1])
+
+    # ... create and use clients here
+</code></pre>
+    </div>
+
+    <div id="RunInstructions" class="tabcontent">
+        <h2>Run Instructions</h2>
+        
+        <h3>Network Setup</h3>
+        <p>To communicate with the G1 robot, your computer must be on the same network as the robot's control computer. The most common method is a direct Ethernet connection.</p>
+        <ol>
+            <li><strong>Connect</strong>: Connect an Ethernet cable from your computer to the Ethernet port on the robot.</li>
+            <li><strong>Robot IP</strong>: The robot has a fixed static IP address: <code>192.168.123.164</code>.</li>
+            <li><strong>Configure Your Computer</strong>: You must assign a static IP address to your computer's Ethernet port on the same subnet. A common choice is <code>192.168.123.200</code>.
+                <ul>
+                    <li><strong>Find your network interface name</strong>: Use <code>ip a</code> or <code>ifconfig</code> in your terminal. Look for an interface name like <code>eth0</code>, <code>enp0s31f6</code>, or similar.</li>
+                    <li><strong>Assign the static IP (Linux)</strong>:
+                        <pre><code># Replace &lt;interface_name&gt; with your actual interface name
+sudo ip addr add 192.168.123.200/24 dev &lt;interface_name&gt;
+sudo ip link set &lt;interface_name&gt; up
+</code></pre>
+                    </li>
+                </ul>
+            </li>
+            <li><strong>Verify Connection</strong>: You should now be able to <code>ping</code> the robot:
+                <pre><code>ping 192.168.123.164</code></pre>
+            </li>
+        </ol>
+
+        <h3>Running an Example</h3>
+        <p>The example scripts provided in this SDK require you to specify the network interface that is connected to the robot.</p>
+        <ul>
+            <li><strong>Command</strong>:
+                <pre><code># Replace &lt;your_network_interface&gt; with the name you found in the previous step
+python3 example/g1/high_level/g1_loco_client_example.py &lt;your_network_interface&gt;
+</code></pre>
+            </li>
+        </ul>
+        <p>This will run the locomotion example, allowing you to send movement commands to the G1 robot. The same principle applies to other examples in the <code>example/g1/</code> directory.</p>
+    </div>
+
+    <div id="Arm" class="tabcontent">
+        <h2>Arm Service (`arm`)</h2>
+        <p><strong>Service Name</strong>: <code>arm</code></p>
+        <p><strong>Client Class</strong>: <code>G1ArmActionClient</code></p>
+        <h4>Example Initialization</h4>
+        <pre><code>from unitree_sdk2py.g1.arm.g1_arm_action_client import G1ArmActionClient
+
+arm_client = G1ArmActionClient()
+arm_client.SetTimeout(10.0)
+arm_client.Init()
+</code></pre>
+        <hr>
+        <h4>Constants</h4>
+        <p><code>action_map</code>: A dictionary mapping human-readable action names to their corresponding integer IDs.</p>
+        <pre><code>action_map = {
+    "release arm": 99,
+    "two-hand kiss": 11,
+    "left kiss": 12,
+    "right kiss": 13,
+    "hands up": 15,
+    "clap": 17,
+    "high five": 18,
+    "hug": 19,
+    "heart": 20,
+    "right heart": 21,
+    "reject": 22,
+    "right hand up": 23,
+    "x-ray": 24,
+    "face wave": 25,
+    "high wave": 26,
+    "shake hand": 27,
+}</code></pre>
+        <hr>
+        <h4>Methods</h4>
+        <h5><code>ExecuteAction(action_id)</code></h5>
+        <p>Executes a predefined arm action.</p>
+        <ul>
+            <li><strong>Parameters:</strong>
+                <ul><li><code>action_id</code> (int): The integer ID of the action to execute. Use the <code>action_map</code> to find the correct ID.</li></ul>
+            </li>
+            <li><strong>Returns:</strong> <code>code</code> (int) - The status code of the operation. 0 indicates success.</li>
+        </ul>
+        <h5><code>GetActionList()</code></h5>
+        <p>Retrieves a list of available arm actions.</p>
+        <ul>
+            <li><strong>Returns:</strong> A tuple <code>(code, data)</code> where <code>code</code> is the status code and <code>data</code> is a list of available actions if successful.</li>
+        </ul>
+    </div>
+
+    <div id="Audio" class="tabcontent">
+        <h2>Audio Service (`voice`)</h2>
+        <p><strong>Service Name</strong>: <code>voice</code></p>
+        <p><strong>Client Class</strong>: <code>AudioClient</code></p>
+        <h4>Example Initialization</h4>
+        <pre><code>from unitree_sdk2py.g1.audio.g1_audio_client import AudioClient
+
+audio_client = AudioClient()
+audio_client.SetTimeout(10.0)
+audio_client.Init()
+</code></pre>
+        <hr>
+        <h4>Methods</h4>
+        <h5><code>TtsMaker(text, speaker_id)</code></h5>
+        <p>Performs text-to-speech.</p>
+        <ul>
+            <li><strong>Parameters:</strong>
+                <ul>
+                    <li><code>text</code> (str): The text to be spoken.</li>
+                    <li><code>speaker_id</code> (int): The ID of the speaker voice to use.</li>
+                </ul>
+            </li>
+            <li><strong>Returns:</strong> <code>code</code> (int) - The status code.</li>
+        </ul>
+
+        <h5><code>LedControl(R, G, B)</code></h5>
+        <p>Sets the color of the LED lights.</p>
+        <ul>
+            <li><strong>Parameters:</strong>
+                <ul>
+                    <li><code>R</code> (int): Red component (0-255).</li>
+                    <li><code>G</code> (int): Green component (0-255).</li>
+                    <li><code>B</code> (int): Blue component (0-255).</li>
+                </ul>
+            </li>
+            <li><strong>Returns:</strong> <code>code</code> (int) - The status code.</li>
+        </ul>
+
+        <h5><code>SetVolume(volume)</code></h5>
+        <p>Sets the audio volume.</p>
+        <ul>
+            <li><strong>Parameters:</strong>
+                <ul><li><code>volume</code> (int): Volume level (0-100).</li></ul>
+            </li>
+             <li><strong>Returns:</strong> <code>code</code> (int) - The status code.</li>
+        </ul>
+
+        <h5><code>GetVolume()</code></h5>
+        <p>Returns the current volume level.</p>
+        <ul>
+             <li><strong>Returns:</strong> A tuple <code>(code, data)</code> where <code>code</code> is the status and <code>data</code> contains the volume if successful.</li>
+        </ul>
+        
+        <h5><code>PlayStream(app_name, stream_id, pcm_data)</code></h5>
+        <p>Plays an audio stream.</p>
+        <ul>
+            <li><strong>Parameters:</strong>
+                <ul>
+                    <li><code>app_name</code> (str): The name of the application.</li>
+                    <li><code>stream_id</code> (str): The ID of the stream.</li>
+                    <li><code>pcm_data</code> (bytes): The raw PCM audio data.</li>
+                </ul>
+            </li>
+            <li><strong>Returns:</strong> Status of the call.</li>
+        </ul>
+
+        <h5><code>PlayStop(app_name)</code></h5>
+        <p>Stops audio playback.</p>
+        <ul>
+            <li><strong>Parameters:</strong>
+                <ul><li><code>app_name</code> (str): The name of the application to stop playback for.</li></ul>
+            </li>
+            <li><strong>Returns:</strong> <code>0</code> on success.</li>
+        </ul>
+    </div>
+
+    <div id="Locomotion" class="tabcontent">
+        <h2>Locomotion Service (`sport`)</h2>
+        <p><strong>Service Name</strong>: <code>sport</code></p>
+        <p><strong>Client Class</strong>: <code>LocoClient</code></p>
+        <h4>Example Initialization</h4>
+        <pre><code>from unitree_sdk2py.g1.loco.g1_loco_client import LocoClient
+
+loco_client = LocoClient()
+loco_client.SetTimeout(10.0)
+loco_client.Init()
+</code></pre>
+        <hr>
+        <h4>Methods</h4>
+
+        <h5><code>Move(vx, vy, vyaw, continous_move=False)</code></h5>
+        <p>Moves the robot with a given velocity.</p>
+        <ul>
+            <li><strong>Parameters:</strong>
+                <ul>
+                    <li><code>vx</code> (float): Forward velocity in m/s.</li>
+                    <li><code>vy</code> (float): Lateral velocity in m/s.</li>
+                    <li><code>vyaw</code> (float): Rotational velocity in rad/s.</li>
+                    <li><code>continous_move</code> (bool): If <code>True</code>, the robot moves indefinitely. If <code>False</code> (default), it moves for a short duration.</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h5><code>Damp()</code></h5>
+        <p>Puts the robot in a damped, stable state. This is equivalent to <code>SetFsmId(1)</code>.</p>
+
+        <h5><code>Squat2StandUp()</code> / <code>StandUp2Squat()</code></h5>
+        <p>Commands the robot to stand up from or to a squatting position. Equivalent to <code>SetFsmId(706)</code>.</p>
+        
+        <h5><code>Lie2StandUp()</code></h5>
+        <p>Commands the robot to stand up from a lying position. Equivalent to <code>SetFsmId(702)</code>.</p>
+
+        <h5><code>LowStand()</code> / <code>HighStand()</code></h5>
+        <p>Commands the robot to a low or high standing posture.</p>
+
+        <h5><code>WaveHand(turn_flag=False)</code></h5>
+        <p>Commands the robot to wave its hand.</p>
+        <ul>
+            <li><strong>Parameters:</strong>
+                <ul><li><code>turn_flag</code> (bool): If <code>True</code>, the robot will turn around while waving.</li></ul>
+            </li>
+        </ul>
+
+        <h5><code>ShakeHand(stage=-1)</code></h5>
+        <p>Commands the robot to perform a handshake action.</p>
+        <ul>
+            <li><strong>Parameters:</strong>
+                <ul><li><code>stage</code> (int): Manages the handshake stage. <code>-1</code> toggles between stages. <code>0</code> and <code>1</code> set specific stages.</li></ul>
+            </li>
+        </ul>
+
+        <h5><code>ZeroTorque()</code></h5>
+        <p>Sets the robot's joints to zero torque, making them compliant. Equivalent to <code>SetFsmId(0)</code>.</p>
+
+        <h5><code>SetFsmId(fsm_id)</code></h5>
+        <p>Sets a specific state machine ID for low-level control.</p>
+        <ul>
+            <li><strong>Parameters:</strong>
+                <ul><li><code>fsm_id</code> (int): The finite state machine ID.</li></ul>
+            </li>
+        </ul>
+
+        <h5><code>SetVelocity(vx, vy, omega, duration=1.0)</code></h5>
+        <p>Low-level method to set velocity for a specific duration.</p>
+        <ul>
+            <li><strong>Parameters:</strong>
+                <ul>
+                    <li><code>vx</code>, <code>vy</code>, <code>omega</code> (float): Velocities.</li>
+                    <li><code>duration</code> (float): Duration in seconds.</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div id="Examples" class="tabcontent">
+        <h2>Examples</h2>
+
+        <h3>Arm Action Example</h3>
+        <p>This example demonstrates how to make the G1 robot perform a "shake hand" action.</p>
+        <pre><code># Assuming ChannelFactory is initialized
+from unitree_sdk2py.g1.arm.g1_arm_action_client import G1ArmActionClient, action_map
+
+arm_client = G1ArmActionClient()
+arm_client.Init()
+
+# Execute the 'shake hand' action
+print("Executing 'shake hand'...")
+arm_client.ExecuteAction(action_map.get("shake hand"))
+</code></pre>
+
+        <h3>Audio and LED Example</h3>
+        <p>This example shows how to use text-to-speech and control the LEDs.</p>
+        <pre><code># Assuming ChannelFactory is initialized
+import time
+from unitree_sdk2py.g1.audio.g1_audio_client import AudioClient
+
+audio_client = AudioClient()
+audio_client.Init()
+
+print("Speaking a message...")
+audio_client.TtsMaker("Hello, I am the G1 Robot!", 0)
+time.sleep(3)
+
+print("Changing LED color to blue...")
+audio_client.LedControl(0, 0, 255)
+</code></pre>
+
+        <h3>Locomotion Example</h3>
+        <p>This example shows how to make the robot move forward and then wave its hand.</p>
+        <pre><code># Assuming ChannelFactory is initialized
+import time
+from unitree_sdk2py.g1.loco.g1_loco_client import LocoClient
+
+loco_client = LocoClient()
+loco_client.Init()
+
+print("Moving forward...")
+loco_client.Move(0.3, 0, 0)
+time.sleep(2)
+
+print("Stopping and waving hand...")
+loco_client.Move(0, 0, 0) # Stop moving
+loco_client.WaveHand()
+</code></pre>
+    </div>
+
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        // Get the element with id="defaultOpen" and click on it
+        document.getElementById("defaultOpen").click();
+    </script>
+
+</body>
+</html>
